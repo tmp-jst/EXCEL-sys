@@ -1,0 +1,78 @@
+import os
+import sys
+import tkinter.filedialog
+from tkinter import messagebox
+import tkinter as tk
+import pandas as pd
+import string
+
+# アプリケーションウィンドウを表示せずに、Tkinterのルートウィンドウを生成
+root = tk.Tk()
+root.withdraw()
+
+# ファイルダイアログで表示するファイルの種類を指定
+fTyp = [("", "*.xlsx")]
+
+# カレントディレクトリからの相対パスを取得
+iDir = os.path.abspath(os.path.dirname(__file__))
+
+# 「はい/いいえ」の質問ダイアログを表示
+ret = messagebox.askyesno("入出力データの指定", "エクセルファイルを選択してください")
+
+# ユーザーが「いいえ」を選択した場合、エラーメッセージを表示してプログラム終了
+if not ret:
+    messagebox.showerror("プログラム終了", "ファイルが選択されませんでした\nプログラムを終了します")
+    sys.exit()
+
+# エクセルファイルを選択するファイルダイアログを表示し、選択されたファイルのパスを取得
+input_fname = tkinter.filedialog.askopenfilename(filetypes=fTyp, initialdir=iDir)
+
+# ファイルが選択されなかった場合、エラーメッセージを表示してプログラム終了
+if not input_fname:
+    messagebox.showerror("プログラム終了", "ファイルが選択されませんでした\nプログラムを終了します")
+    sys.exit()
+
+# 選択されたエクセルファイルを読み込み、ヘッダーを含むデータを取得
+checklist_data = pd.read_excel(input_fname, header=0)
+
+# カラム選択用のダイアログを表示
+def show_column_selection_dialog():
+    # カラム選択用のサブウィンドウ（Toplevel）を生成
+    column_selection_dialog = tk.Toplevel(root)
+    column_selection_dialog.title("カラムの選択")
+
+    # カラムヘッダーを読み込み（実際はエクセルファイルのヘッダーを使用）
+    # この例では仮のヘッダーを使用
+    column_headers = checklist_data.columns
+
+    # カラムの選択状態を保持するための変数とチェックボックスを作成
+    columns = []
+    for col_header in column_headers:
+        col_var = tk.IntVar()
+        columns.append(col_var)
+        chk = tk.Checkbutton(column_selection_dialog, text=col_header, variable=col_var)
+        chk.pack()
+
+    # 「選択したカラムを表示」ボタンを作成し、選択されたカラムを処理する関数を呼び出す
+    btn_select_columns = tk.Button(column_selection_dialog, text="選択したカラムを表示", command=select_columns)
+    btn_select_columns.pack()
+
+# カラムの選択用ダイアログから選択されたカラムを処理するためのリスト
+selected_columns = []
+
+# チェックボックスの選択状態を確認し、選択されたカラムをリストに追加
+def select_columns():
+    for col_var, col_header in zip(columns, column_headers):
+        if col_var.get():
+            selected_columns.append(col_header)
+    if not selected_columns:
+        messagebox.showerror("エラー", "少なくとも1つのカラムを選択してください")
+    else:
+        # ここに選択されたカラムを処理するコードを追加することができます
+
+# カラム選択ボタンを表示
+btn_select_columns = tk.Button(root, text="カラムを選択", command=show_column_selection_dialog)
+btn_select_columns.pack()
+
+# Tkinterのメインループを起動して、アプリケーションを実行
+root.mainloop()
